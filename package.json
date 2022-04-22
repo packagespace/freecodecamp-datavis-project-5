@@ -9,5 +9,19 @@
   },
   "dependencies": {
     "d3": "^7.4.4"
-  }
+  },
+  "name": "freecodecamp-datavis-project-5",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/packagespace/freecodecamp-datavis-project-5.git"
+  },
+  "author": "packagespace",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/packagespace/freecodecamp-datavis-project-5/issues"
+  },
+  "homepage": "https://github.com/packagespace/freecodecamp-datavis-project-5#readme",
+  "description": ""
 }

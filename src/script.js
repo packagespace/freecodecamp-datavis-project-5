@@ -3,9 +3,9 @@ const KICKSTARTER_JSON =
 
 const options = {
 	title: "Kickstarter Pledges",
-	description: "idk",
+	description: "Top 100",
 	dimensions: {
-		width: 1250,
+		width: 1000,
 		height: 500,
 	},
 	padding: {
@@ -13,7 +13,7 @@ const options = {
 		right: 50,
 		bottom: 150,
 		left: 50,
-		inner: 5,
+		inner: 1,
 	},
 	titlePosition: {
 		x: 15,
@@ -81,13 +81,51 @@ function Treemap(
 		.attr("height", dimensions.height)
 		.attr("transform", `translate(${padding.left}, ${padding.top})`);
 
-	//treemap stuff
+	//compute treemap
 	const root = d3
 		.hierarchy(data)
 		.sum((d) => d.value)
 		.sort((a, b) => d3.descending(a.value, b.value));
-	const treemap = d3.treemap(root);
+	console.log(dimensions.width);
+	const treemap = d3
+		.treemap()
+		.size([dimensions.width, dimensions.height])
+		.paddingInner(padding.inner);
+	treemap(root);
 
+	//create category - color scale
+	const categories = data.children.map((child) => child.name);
+
+	const color = d3.scaleOrdinal(d3.schemeCategory10).domain(categories);
+
+	//create rectangles
+	const tiles = chartArea
+		.selectAll("rect")
+		.data(root.leaves())
+		.join("rect")
+		.attr("class", "tile")
+		.attr("transform", (d) => `translate(${d.x0},${d.y0})`)
+		.attr("width", (d) => d.x1 - d.x0)
+		.attr("height", (d) => d.y1 - d.y0)
+		.attr("fill", (d) => color(d.data.category))
+		.attr("data-name", (d) => d.data.name)
+		.attr("data-category", (d) => d.data.category)
+		.attr("data-value", (d) => d.data.value);
+	/*
+		.attr("xlink:href", link == null ? null : (d, i) => link(d.data, d))
+		.attr("target", link == null ? null : linkTarget)
+		.attr("transform", (d) => `translate(${d.x0},${d.y0})`);
+	
+  node.append("rect")
+      .attr("fill", color ? (d, i) => color(G[i]) : fill)
+      .attr("fill-opacity", fillOpacity)
+      .attr("stroke", stroke)
+      .attr("stroke-width", strokeWidth)
+      .attr("stroke-opacity", strokeOpacity)
+      .attr("stroke-linejoin", strokeLinejoin)
+      .attr("width", d => d.x1 - d.x0)
+      .attr("height", d => d.y1 - d.y0);
+	*/
 	//helper functions
 	function getTotalDimensions(dimensions, padding) {
 		return [

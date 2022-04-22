@@ -20,5 +20,8 @@
     "url": "https://github.com/packagespace/freecodecamp-datavis-project-5/issues"
   },
   "homepage": "https://github.com/packagespace/freecodecamp-datavis-project-5#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@types/d3": "^7.1.0"
+  }
 }

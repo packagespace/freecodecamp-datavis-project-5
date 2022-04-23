@@ -3,14 +3,14 @@ const KICKSTARTER_JSON =
 
 const options = {
 	title: "Kickstarter Pledges",
-	description: "Top 100",
+	description: "100 most pledged projects",
 	dimensions: {
 		width: 1000,
 		height: 500,
 	},
 	padding: {
 		top: 100,
-		right: 50,
+		right: 400,
 		bottom: 150,
 		left: 50,
 		inner: 1,
@@ -23,6 +23,19 @@ const options = {
 		x: 15,
 		y: 40,
 	},
+	tooltipOffset: {
+		x: -75,
+		y: -100,
+	},
+	legendDimensions: {
+		width: 250,
+		height: 600,
+	},
+	legendPosition: {
+		x: 1100,
+		y: 110,
+	},
+	legendItemOffset: 25,
 };
 
 d3.json(KICKSTARTER_JSON)
@@ -38,14 +51,14 @@ function Treemap(
 		padding,
 		titlePosition,
 		descriptionPosition,
+		tooltipOffset,
+		legendDimensions,
+		legendPosition,
+		legendItemOffset,
 	}
 ) {
 	//compute dimensions
 	const [totalWidth, totalHeight] = getTotalDimensions(dimensions, padding);
-	/*const [totalLegendWidth, totalLegendHeight] = getTotalDimensions(
-		legendDimensions,
-		legendPadding
-	);*/
 
 	//create svg
 	const svg = d3
@@ -86,19 +99,72 @@ function Treemap(
 		.hierarchy(data)
 		.sum((d) => d.value)
 		.sort((a, b) => d3.descending(a.value, b.value));
-	console.log(dimensions.width);
 	const treemap = d3
 		.treemap()
 		.size([dimensions.width, dimensions.height])
 		.paddingInner(padding.inner);
 	treemap(root);
 
-	//create category - color scale
+	//create category array
 	const categories = data.children.map((child) => child.name);
 
-	const color = d3.scaleOrdinal(d3.schemeCategory10).domain(categories);
+	//create category - color scale
+	const colorScale = d3
+		.scaleOrdinal([
+			"#1f77b4",
+			"#aec7e8",
+			"#ff7f0e",
+			"#ffbb78",
+			"#2ca02c",
+			"#98df8a",
+			"#d62728",
+			"#ff9896",
+			"#9467bd",
+			"#c5b0d5",
+			"#8c564b",
+			"#c49c94",
+			"#e377c2",
+			"#f7b6d2",
+			"#7f7f7f",
+			"#c7c7c7",
+			"#bcbd22",
+			"#dbdb8d",
+			"#17becf",
+			"#9edae5",
+		])
+		.domain(categories);
 
-	//create rectangles
+	//create legend area
+	const legendArea = svg
+		.append("svg")
+		.attr("id", "legend")
+		.attr("transform", `translate(${legendPosition.x}, ${legendPosition.y})`)
+		.attr("height", legendDimensions.height)
+		.attr("width", legendDimensions.width);
+
+	//create legend lines
+	const legendLines = legendArea
+		.selectAll("g")
+		.data(categories)
+		.join("g")
+		.attr("class", "legend-line")
+		.attr("transform", (_d, i) => `translate(0, ${legendItemOffset * i})`);
+
+	//create legend tiles
+	const legendTiles = legendLines
+		.append("rect")
+		.attr("class", "legend-item")
+		.attr("width", 20)
+		.attr("height", 20)
+		.attr("fill", colorScale);
+
+	//create legend text
+	const legendText = legendLines
+		.append("text")
+		.attr("class", "legend-text")
+		.attr("transform", `translate(${legendItemOffset}, ${20})`)
+		.text((d) => d);
+	//create tiles
 	const tiles = chartArea
 		.selectAll("rect")
 		.data(root.leaves())
@@ -107,25 +173,33 @@ function Treemap(
 		.attr("transform", (d) => `translate(${d.x0},${d.y0})`)
 		.attr("width", (d) => d.x1 - d.x0)
 		.attr("height", (d) => d.y1 - d.y0)
-		.attr("fill", (d) => color(d.data.category))
+		.attr("fill", (d) => colorScale(d.data.category))
 		.attr("data-name", (d) => d.data.name)
 		.attr("data-category", (d) => d.data.category)
-		.attr("data-value", (d) => d.data.value);
-	/*
-		.attr("xlink:href", link == null ? null : (d, i) => link(d.data, d))
-		.attr("target", link == null ? null : linkTarget)
-		.attr("transform", (d) => `translate(${d.x0},${d.y0})`);
-	
-  node.append("rect")
-      .attr("fill", color ? (d, i) => color(G[i]) : fill)
-      .attr("fill-opacity", fillOpacity)
-      .attr("stroke", stroke)
-      .attr("stroke-width", strokeWidth)
-      .attr("stroke-opacity", strokeOpacity)
-      .attr("stroke-linejoin", strokeLinejoin)
-      .attr("width", d => d.x1 - d.x0)
-      .attr("height", d => d.y1 - d.y0);
-	*/
+		.attr("data-value", (d) => d.data.value)
+		.on("mouseover", mouseover)
+		.on("mousemove", mousemove)
+		.on("mouseleave", mouseleave);
+
+	//create tooltip
+	const tooltip = d3.select("#visHolder").append("div").attr("id", "tooltip");
+
+	//event functions
+	function mouseover(_e, d) {
+		const tile = d3.select(this);
+		tooltip
+			.html(`${tile.attr("data-name")}: ${tile.attr("data-value")} pledges`)
+			.style("opacity", 1)
+			.attr("data-value", tile.attr("data-value"));
+	}
+	function mousemove(e) {
+		tooltip
+			.style("left", `${e.pageX + tooltipOffset.x}px`)
+			.style("top", `${e.pageY + tooltipOffset.y}px`);
+	}
+	function mouseleave() {
+		tooltip.style("opacity", 0);
+	}
 	//helper functions
 	function getTotalDimensions(dimensions, padding) {
 		return [

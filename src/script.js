@@ -188,7 +188,11 @@ function Treemap(
 	function mouseover(_e, d) {
 		const tile = d3.select(this);
 		tooltip
-			.html(`${tile.attr("data-name")}: ${tile.attr("data-value")} pledges`)
+			.html(
+				`${tile.attr("data-name")}: ${d3.format(".3s")(
+					tile.attr("data-value")
+				)} pledges`
+			)
 			.style("opacity", 1)
 			.attr("data-value", tile.attr("data-value"));
 	}
